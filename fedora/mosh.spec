@@ -1,22 +1,27 @@
-Name:		mosh
-Version:	1.2.5
+Name:		mosh-af
+Version:	1.3.2
 Release:	1%{?dist}
 Summary:	Mobile shell that supports roaming and intelligent local echo
 
 License:	GPLv3+
 Group:		Applications/Internet
-URL:		https://mosh.org/
-Source0:	https://github.com/downloads/keithw/mosh/mosh-%{version}.tar.gz
+URL:		https://mosh.mit.edu/
+Source0:	https://github.com/kam1kaze/mosh/archive/af-%{version}.tar.gz
 
+BuildRequires:	perl-generators
 BuildRequires:	protobuf-compiler
 BuildRequires:	protobuf-devel
 BuildRequires:	libutempter-devel
 BuildRequires:	zlib-devel
 BuildRequires:	ncurses-devel
 BuildRequires:	openssl-devel
+# autogen.sh required:
+BuildRequires:	autoconf
+BuildRequires:	automake
+
 Requires:	openssh-clients
 Requires:	openssl
-Requires:	perl-IO-Socket-IP
+Requires:	perl(IO::Socket::INET6)
 
 %description
 Mosh is a remote terminal application that supports:
@@ -31,9 +36,8 @@ Mosh is a remote terminal application that supports:
 
 
 %build
-# Use upstream's more aggressive hardening instead of Fedora's defaults
-export CFLAGS="-g -O2" CXXFLAGS="-g -O2"
-%configure --enable-compile-warnings=error
+./autogen.sh
+%configure --disable-silent-rules
 make %{?_smp_mflags}
 
 
@@ -42,7 +46,8 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %files
-%doc README.md COPYING ChangeLog
+%doc README.md ChangeLog
+%license COPYING
 %{_bindir}/mosh
 %{_bindir}/mosh-client
 %{_bindir}/mosh-server
@@ -52,14 +57,49 @@ make install DESTDIR=$RPM_BUILD_ROOT
 
 
 %changelog
-* Sun Jul 12 2015 John Hood <cgull@glup.org> - 1.2.5-1
+* Sun Mar 26 2017 Alex Chernyakhovsky <achernya@mit.edu> - 1.3.0-1
+- Update to mosh 1.3.0
+
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 1.2.6-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Thu Jan 26 2017 Orion Poplawski <orion@cora.nwra.com> - 1.2.6-3
+- Rebuild for protobuf 3.2.0
+
+* Sat Nov 19 2016 Orion Poplawski <orion@cora.nwra.com> - 1.2.6-2
+- Rebuild for protobuf 3.1.0
+
+* Wed Aug 10 2016 Alex Chernyakhovsky <achernya@mit.edu> - 1.2.6-1
+- Update to mosh 1.2.6
+
+* Mon Feb 08 2016 Ralf Corsépius <corsepiu@fedoraproject.org> - 1.2.5-3
+- Let package honor RPM_OPT_FLAGS (Fix F24FTBFS).
+- Add %%license.
+- Make building verbose.
+
+* Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.2.5-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Thu Aug  6 2015 Alex Chernyakhovsky <achernya@mit.edu> - 1.2.5-1
 - Update to mosh 1.2.5
 
-* Fri Jun 26 2015 John Hood <cgull@glup.org> - 1.2.4.95rc2-1
-- Update to mosh 1.2.4.95rc2
+* Wed Jun 17 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.4-7
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
-* Mon Jun 08 2015 John Hood <cgull@glup.org> - 1.2.4.95rc1-1
-- Update to mosh 1.2.4.95rc1
+* Sun Apr 26 2015 Alex Chernyakhovsky <achernya@mit.edu> - 1.2.4-6
+- Rebuild for protobuf version bump.
+
+* Sun Aug 17 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.4-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.4-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Sat Aug 03 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.2.4-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Wed Jul 17 2013 Petr Pisar <ppisar@redhat.com> - 1.2.4-2
+- Perl 5.18 rebuild
 
 * Wed Mar 27 2013 Alexander Chernyakhovsky <achernya@mit.edu> - 1.2.4-1
 - Update to mosh 1.2.4
