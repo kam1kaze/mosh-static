@@ -1,0 +1,101 @@
+---
+name: "Build and release"
+
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build_linux:
+    name: Build Linux
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - run: docker build -t builder .
+      - name: Build binary
+        run: |
+          docker run \
+            -v $PWD:/mosh \
+            -w /mosh \
+            --name=builder \
+            builder \
+            sh -c './autogen.sh && LDFLAGS=-static ./configure && make -j$(nproc) && strip src/frontend/mosh-server src/frontend/mosh-client'
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mosh-linux
+          path: |
+            src/frontend/mosh-server
+            src/frontend/mosh-client
+          if-no-files-found: error
+
+  build_macos:
+    name: Build MaxOS
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - run: |
+          brew install \
+            autoconf \
+            m4 \
+            automake \
+            pkg-config \
+            protobuf \
+            gdbm \
+            mpdecimal \
+            openssl@1.1 \
+            ca-certificates \
+            readline \
+            sqlite \
+            xz \
+            six \
+            tcl-tk \
+            zlib
+      - run: |
+          ./autogen.sh && ./configure && make
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mosh-macos
+          path: |
+            src/frontend/mosh-server
+            src/frontend/mosh-client
+          if-no-files-found: error
+
+  release:
+    name: Release
+    runs-on: ubuntu-20.04
+    needs: [build_linux,build_macos]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: mosh-linux
+      - name: Generate release notes
+        run: |
+          (
+            echo '- [Build #${{ github.run_number }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})'
+            echo
+            echo '## Files'
+            echo '```'
+            ( file mosh-server mosh-client )
+            echo '```'
+            echo
+            echo '## SHA256 Checksums'
+            echo '```'
+            ( sha256sum mosh-server mosh-client )
+            echo '```'
+          ) | tee release.md
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Build #${{ github.run_number }}"
+          body_path: release.md
+          prerelease: false
+          draft: false
+          tag_name: run-${{ github.run_number }}
+          files: |
+            mosh-server
+            mosh-client
